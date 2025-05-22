@@ -1,0 +1,113 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>玩家数据可视化</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0"></script>
+    <style>
+        .control-panel {
+            margin: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        #chartContainer {
+            width: 90%;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="control-panel">
+        <label>选择日期: 
+            <input type="date" id="datePicker" min="2025-05-01" max="2025-05-31">
+        </label>
+        <label>Y轴最小值: <input type="number" id="yMin"></label>
+        <label>Y轴最大值: <input type="number" id="yMax"></label>
+        <button onclick="updateChart()">更新图表</button>
+    </div>
+    <div id="chartContainer">
+        <canvas id="dataChart"></canvas>
+    </div>
+
+    <script>
+        let chart;
+        const ctx = document.getElementById('dataChart').getContext('2d');
+        
+        // 初始化图表
+        function initChart(data) {
+            if (chart) chart.destroy();
+            
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: '活跃玩家数',
+                        data: data,
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1,
+                        pointRadius: 3
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                displayFormats: { hour: 'HH:mm' },
+                                tooltipFormat: 'HH:mm',
+                                unit: 'hour'
+                            },
+                            ticks: { source: 'data' }
+                        },
+                        y: {
+                            min: Math.min(...data.map(d => d.y)) - 100,
+                            max: Math.max(...data.map(d => d.y)) + 100
+                        }
+                    },
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        // 更新图表
+        async function updateChart() {
+            const date = document.getElementById('datePicker').value;
+            const [year, month, day] = date.split('-');
+            const filename = `ActivePlayersData_${month}_${day}.json`;
+            
+            try {
+                const response = await fetch(`data/${filename}`);
+                const rawData = await response.json();
+                const chartData = rawData.map(item => ({
+                    x: moment(item[0], "YYYY/MM/DD HH:mm:ss").valueOf(),
+                    y: item[1]
+                }));
+                
+                initChart(chartData);
+                applyYAxisRange();
+            } catch (error) {
+                console.error('加载数据失败:', error);
+            }
+        }
+
+        // 应用Y轴范围
+        function applyYAxisRange() {
+            const yMin = document.getElementById('yMin').value;
+            const yMax = document.getElementById('yMax').value;
+            
+            if (yMin) chart.options.scales.y.min = parseInt(yMin);
+            if (yMax) chart.options.scales.y.max = parseInt(yMax);
+            
+            chart.update();
+        }
+
+        // 初始化默认日期
+        document.getElementById('datePicker').value = '2025-05-21';
+        document.addEventListener('DOMContentLoaded', updateChart);
+    </script>
+</body>
+</html>
