@@ -3,14 +3,17 @@
 <html>
 <head>
     <title>玩家数据可视化</title>
-    <!-- 使用稳定CDN源 -->
+    <!-- 使用国内CDN源 -->
     <script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/chartjs-adapter-moment/1.0.0/chartjs-adapter-moment.min.js"></script>
     <script>
-        // CDN加载失败时使用本地资源
-        window.Chart || document.write('<script src="lib/chart.min.js"><\/script>');
-        window.moment || document.write('<script src="lib/moment.min.js"><\/script>');
+        // 增强型fallback检测
+        if(!window.Chart || !window.moment) {
+            document.write('<script src="lib/chart.min.js"><\/script>');
+            document.write('<script src="lib/moment.min.js"><\/script>');
+            document.write('<script src="lib/chartjs-adapter-moment.min.js"><\/script>');
+        }
     </script>
     
     <style>
@@ -19,10 +22,20 @@
             padding: 15px;
             border: 1px solid #ddd;
             border-radius: 5px;
+            background: #f9f9f9;
         }
         #chartContainer {
             width: 90%;
-            margin: 0 auto;
+            margin: 20px auto;
+            height: 400px;
+        }
+        button {
+            padding: 5px 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -40,16 +53,19 @@
     </div>
 
     <script>
+        // 库加载检查函数
+        function checkLibs() {
+            if(!window.Chart || !window.moment) {
+                throw new Error("核心库加载失败，请检查网络连接或本地库文件");
+            }
+        }
+
         let chart;
         const ctx = document.getElementById('dataChart').getContext('2d');
         
-        // 去除月份/日期前导零
-        function formatMonthDay(num) {
-            return parseInt(num).toString();
-        }
-
         // 初始化图表
         function initChart(data) {
+            checkLibs();
             if (chart) chart.destroy();
             
             chart = new Chart(ctx, {
@@ -59,8 +75,10 @@
                         label: '活跃玩家数',
                         data: data,
                         borderColor: 'rgb(75, 192, 192)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.1)',
                         tension: 0.1,
-                        pointRadius: 3
+                        pointRadius: 3,
+                        borderWidth: 2
                     }]
                 },
                 options: {
@@ -68,15 +86,20 @@
                         x: {
                             type: 'time',
                             time: {
-                                displayFormats: { hour: 'HH:mm' },
+                                displayFormats: {
+                                    hour: 'HH:mm',
+                                    minute: 'HH:mm'
+                                },
                                 tooltipFormat: 'HH:mm',
                                 unit: 'hour'
                             },
-                            ticks: { source: 'data' }
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 30
+                            }
                         },
                         y: {
-                            suggestedMin: Math.min(...data.map(d => d.y)) - 100,
-                            suggestedMax: Math.max(...data.map(d => d.y)) + 100
+                            beginAtZero: false
                         }
                     },
                     responsive: true,
@@ -87,46 +110,46 @@
 
         // 更新图表
         async function updateChart() {
-            const now = new Date();
-            const month = now.getMonth()+1;
-            const date = now.getDate();
-            const filename = `ActivePlayersData_${month}_${date}.json`;
-            //const date = document.getElementById('datePicker').value;
-            //const [year, month, day] = date.split('-');
-            // 去除前导零的文件名
-            //const filename = `ActivePlayersData_${formatMonthDay(month)}_${formatMonthDay(day)}.json`;
-            
             try {
+                const date = document.getElementById('datePicker').value;
+                const [year, month, day] = date.split('-');
+                const filename = `ActivePlayersData_${parseInt(month)}_${parseInt(day)}.json`;
+                
                 const response = await fetch(`PlayersData/${filename}`);
-                if (!response.ok) throw new Error('文件未找到');
+                if (!response.ok) throw new Error(`数据文件 ${filename} 未找到`);
+                
                 const rawData = await response.json();
                 const chartData = rawData.map(item => ({
-                    x: moment(item[0], "YYYY/MM/DD HH:mm:ss").valueOf(),
+                    x: moment(item[0], "YYYY/MM/DD HH:mm:ss"),
                     y: item[1]
                 }));
-                
+
                 initChart(chartData);
                 applyYAxisRange();
             } catch (error) {
-                console.error('加载数据失败:', error);
-                alert(`数据加载失败: ${error.message}`);
+                console.error('Error:', error);
+                alert(`操作失败: ${error.message}`);
             }
         }
 
         // 应用Y轴范围
         function applyYAxisRange() {
+            if(!chart) return;
+            
             const yMin = document.getElementById('yMin').value;
             const yMax = document.getElementById('yMax').value;
             
-            if (yMin) chart.options.scales.y.min = parseInt(yMin);
-            if (yMax) chart.options.scales.y.max = parseInt(yMax);
+            if (yMin) chart.options.scales.y.min = parseFloat(yMin);
+            if (yMax) chart.options.scales.y.max = parseFloat(yMax);
             
             chart.update();
         }
 
-        // 初始化默认日期
-        document.getElementById('datePicker').value = '2025-05-21';
-        document.addEventListener('DOMContentLoaded', updateChart);
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('datePicker').value = '2025-05-21';
+            updateChart();
+        });
     </script>
 </body>
 </html>
