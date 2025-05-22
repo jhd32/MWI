@@ -4,9 +4,14 @@
 <head>
     <title>玩家数据可视化</title>
     <!-- 使用稳定CDN源 -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/chartjs-adapter-moment/1.0.0/chartjs-adapter-moment.min.js"></script>
+    <script>
+        // CDN加载失败时使用本地资源
+        window.Chart || document.write('<script src="lib/chart.min.js"><\/script>');
+        window.moment || document.write('<script src="lib/moment.min.js"><\/script>');
+    </script>
     
     <style>
         .control-panel {
