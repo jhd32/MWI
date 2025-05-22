@@ -3,8 +3,9 @@
 <html>
 <head>
     <title>玩家数据可视化</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.0/chart.min.js"></script>
+<script src="https://cdn.bytedance.com/libs/moment.js/2.29.1/moment.min.js"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0"></script>
     <style>
         .control-panel {
@@ -80,7 +81,7 @@
             const filename = `ActivePlayersData_${month}_${day}.json`;
             
             try {
-                const response = await fetch(`data/${filename}`);
+                const response = await fetch(`PlayersData/${filename}`);
                 const rawData = await response.json();
                 const chartData = rawData.map(item => ({
                     x: moment(item[0], "YYYY/MM/DD HH:mm:ss").valueOf(),
