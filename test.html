@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <title>Test</title>
+    <link rel="stylesheet" href="css/flatpickr.min.css">
+    <script src="js/chart.js"></script>
+    <script src="js/flatpickr.js"></script>
+    <script src="js/l10n/zh.js"></script>
+</head>
+
+<body>
+    <input type="text" id="datePicker" placeholder="选择日期">
+    <div id="dateInfo"></div>
+
+    <script>
+        let flatpickrInstance = null;
+        let availableDates = [];
+
+        // 初始化 flatpickr
+        function initDatePicker() {
+            flatpickrInstance = flatpickr("#datePicker", {
+                locale: "zh", // 中文
+                dateFormat: "Y-m-d",
+                onChange: function(selectedDates, dateStr, instance) {
+                    
+                    if (dateStr) {
+                        loadDataForDate(dateStr);
+                    }
+                },
+                // 日期选择器的月份变化时，构建当前年月路径，访问data/2025-05/Manifest.json，获取当月可提供的日期，更新表格
+                onMonthChange: function(selectedDates, dateStr, instance) {
+                    // const curYear = instance.currentYear;
+                    // const curMonth = instance.currentMonth;
+                    // const manifestFilePath = `data/${curYear}-${curMonth.padStart(2, '0')}/Manifest.json`;
+                    // console.log(instance.currentMonth+" "+ instance.currentYear);
+
+                    updateAvailableDates(instance.currentYear, instance.currentMonth+1);
+                },
+                onReady: function(selectedDates, dateStr, instance) {
+                    // 初始时禁用所有日期
+                    instance.set('enable', []);
+                }
+            });
+        }
+
+        // 更新可用日期
+        async function updateAvailableDates(year, month) {
+            try {
+                const folderName = `${year}-${month.toString().padStart(2, '0')}`;
+                const manifestUrl = `data/${folderName}/Manifest.json`;
+                console.log(manifestUrl);
+                const response = await fetch(manifestUrl);
+                if (!response.ok) return;
+                
+                const manifest = await response.json();
+                availableDates = manifest.availableDates || [];
+                
+                // 更新日期选择器的可用日期
+                flatpickrInstance.set('enable', availableDates);
+                
+                // 更新提示信息
+                //updateDateInfo(year, month, availableDates);
+                
+            } catch (error) {
+                console.error('获取可用日期失败:', error);
+                availableDates = [];
+                flatpickrInstance.set('enable', []);
+            }
+        }
+
+        function updateDateInfo(year, month, dates) {
+            const infoElement = document.getElementById('dateInfo');
+            infoElement.innerHTML = `
+                <div style="color: #666; margin-top: 10px;">
+                    <strong>${year}-${month}</strong> 有 <strong style="color: #4CAF50;">${dates.length}</strong> 天可用数据
+                    ${dates.length > 0 ? `<br>可用日期: ${dates.join(', ')}` : ''}
+                </div>
+            `;
+        }
+
+        // 监听月份变化
+        document.getElementById('datePicker').addEventListener('focus', function() {
+            // 当用户点击选择器时，如果还没有选择月份，提示先选择年份
+        });
+
+        // 初始化
+        initDatePicker();
+
+    </script>
+</body>
+
+</html>
