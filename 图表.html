@@ -232,13 +232,14 @@
     <script>
         // 初始化日期选择器
         let flatpickrInstance = null;
-        let availableDates = [];
+        // let availableDates = [];
         let chart = null;
+        const MANIFEST_PATH = "data/Manifest.json";
 
         const datePicker = flatpickr("#datePicker", {
             locale: "zh",
             dateFormat: "Y-m-d",
-            defaultDate: "2025-05-22",
+            // defaultDate: "2025-05-22",
             onChange: function(selectedDates, dateStr, instance) {
                 // dateStr = "2025-05-22"
                 loadCsvFile(dateStr);
@@ -253,18 +254,17 @@
             }
         });
 
+
         // 更新可用日期
         async function updateAvailableDates(year, month) {
             try {
-                const folderName = `${year}-${month.toString().padStart(2, '0')}`;
-                const manifestUrl = `data/${folderName}/Manifest.json`;
-                console.log(manifestUrl);
-                const response = await fetch(manifestUrl);
-                if (!response.ok) return;
-                
-                const manifest = await response.json();
-                availableDates = manifest.availableDates || [];
-                console.log(availableDates);
+                const res = await fetch(MANIFEST_PATH);
+                if (!res.ok){
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
+                const manifestJson = await res.json();
+                const curMonth = `${year}-${month.toString().padStart(2, '0')}`;
+                const availableDates = manifestJson["availableDates"][curMonth];
                 // 更新日期选择器的可用日期
                 datePicker.set('enable', availableDates);
                 
@@ -273,7 +273,6 @@
                 
             } catch (error) {
                 console.error('获取可用日期失败:', error);
-                availableDates = [];
                 datePicker.set('enable', []);
             }
         }
@@ -287,7 +286,6 @@
 
             const dateSelect = dateStr.split("-");
             const filePath = `data/${dateSelect[0]}-${dateSelect[1]}/${dateStr}.csv`;
-            console.log(filePath);
             try {
                 const response = await fetch(filePath);
                 if (!response.ok) throw new Error(`文件加载失败: ${response.status}`);
@@ -305,18 +303,17 @@
                         playerCount:parseInt(dateDetail[1].trim(), 10)
                     });
                 }
-                console.log(result);
                 updateStats(result);
-                updateChart1(result);
+                updateChart(result);
             } catch (error) {
                 alert('选择的日期没有可用数据');
                 console.error('读取CSV失败:', error);
             }
         }
 
+
         // 更新图表
-        function updateChart1(dateDetails) {
-            console.log(dateDetails);
+        function updateChart(dateDetails) {
             const ctx = document.getElementById('onlineChart').getContext('2d');
             const yAxisStart = parseInt(document.getElementById('yAxisStart').value) || 0;
             
@@ -325,11 +322,8 @@
             }
             const dates = dateDetails.map(dateDetail =>{
                 const date = new Date(dateDetail.date);
-                console.log(date);
-                console.log(date.toTimeString());
                 return date.toTimeString().substring(0, 5);
             });
-            console.log(dates);
             const playerCounts = dateDetails.map(dateDetail =>dateDetail.playerCount);
             const players = dateDetails.map(item => item.players);
             
@@ -439,7 +433,9 @@
         window.onload = function() {
             const today = new Date();
             const todayStr = today.toISOString().split('T')[0];
-            datePicker.setDate("2025-05-22");
+            datePicker.setDate(todayStr);
+            datePicker.input.value = todayStr;
+            updateAvailableDates(today.getFullYear(), today.getMonth()+1);
         };
     </script>
 </body>
