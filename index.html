@@ -198,7 +198,7 @@
         </div>
         
         <div class="data-info">
-            <!-- <h3>数据统计信息</h3> -->
+            <h3>数据统计信息</h3>
             <div class="stats">
                 <div class="stat-card">
                     <div class="stat-value" id="maxValue">0</div>
@@ -399,10 +399,18 @@
         window.onload = function() {
             const today = new Date();
             const todayStr = today.toISOString().split('T')[0];
-            datePicker.setDate(todayStr);
-            datePicker.input.value = todayStr;
+            
+            setTimeout(() => {
+                try {
+                    datePicker.setDate(todayStr, false);
+                    
+                    loadCsvFile(todayStr);
+                } catch (error) {
+                    console.error('设置日期失败:', error);
+                }
+            }, 300);
+            
             updateAvailableDates(today.getFullYear(), today.getMonth()+1);
-            loadCsvFile(todayStr);
         };
     </script>
 </body>
