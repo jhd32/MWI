@@ -402,6 +402,7 @@
             datePicker.setDate(todayStr);
             datePicker.input.value = todayStr;
             updateAvailableDates(today.getFullYear(), today.getMonth()+1);
+            loadCsvFile(todayStr);
         };
     </script>
 </body>
