@@ -409,7 +409,9 @@
 
         // 更新统计信息
         function updateStats(dateDetails) {
-            const players = dateDetails.map(dateDetail => dateDetail.playerCount);
+            const players = dateDetails.map(dateDetail => dateDetail.playerCount).filter(count => count !== null && count !== 0);
+            console.log(players);
+                          
             const max = Math.max(...players);
             const min = Math.min(...players);
             const avg = Math.round(players.reduce((a, b) => a + b, 0) / players.length);

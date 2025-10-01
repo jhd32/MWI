@@ -1,92 +1,449 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <title>Test</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>牛牛在线人数</title>
+    <!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/zh.js"></script>-->
+
     <link rel="stylesheet" href="css/flatpickr.min.css">
     <script src="js/chart.js"></script>
     <script src="js/flatpickr.js"></script>
     <script src="js/l10n/zh.js"></script>
-</head>
 
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #ff8a00, #e52e71);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .description {
+            color: #ccc;
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+        }
+        
+        .control-group {
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #ff8a00;
+        }
+        
+        input, button {
+            padding: 12px 15px;
+            border: none;
+            border-radius: 5px;
+            width: 100%;
+            font-size: 1rem;
+        }
+        
+        input[type="number"] {
+            background: #2c2c2c;
+            color: white;
+            border: 1px solid #444;
+        }
+        
+        button {
+            background: linear-gradient(90deg, #ff8a00, #e52e71);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 500px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .data-info {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .data-info h3 {
+            color: #ff8a00;
+            margin-bottom: 15px;
+        }
+        
+        .stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .stat-card {
+            flex: 1;
+            min-width: 200px;
+            background: rgba(255, 138, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ff8a00;
+        }
+        
+        .stat-label {
+            color: #ccc;
+            margin-top: 5px;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #ccc;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+            }
+            
+            .control-group {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
 <body>
-    <input type="text" id="datePicker" placeholder="选择日期">
-    <div id="dateInfo"></div>
+    <div class="container">
+        <header>
+            <h1>牛牛在线人数</h1>
+            <!--<p class="description">可视化分析游戏每分钟的在线人数数据，支持按日期选择和Y轴自定义</p>-->
+        </header>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="datePicker">选择日期：</label>
+                <input type="text" id="datePicker" placeholder="选择要查看的日期">
+            </div>
+            
+            <div class="control-group">
+                <label for="yAxisStart">Y轴起始值：</label>
+                <input type="number" id="yAxisStart" placeholder="输入Y轴起始值" value="0">
+            </div>
+            
+            <div class="control-group">
+                <label>&nbsp;</label>
+                <button id="updateChart">更新图表</button>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <canvas id="onlineChart"></canvas>
+        </div>
+        
+        <div class="data-info">
+            <h3>数据统计信息</h3>
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="maxValue">0</div>
+                    <div class="stat-label">最高在线人数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="minValue">0</div>
+                    <div class="stat-label">最低在线人数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="avgValue">0</div>
+                    <div class="stat-label">平均在线人数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalData">0</div>
+                    <div class="stat-label">数据点数量</div>
+                </div>
+            </div>
+        </div>
+        
+        <!--<footer>
+            <p>© 2023 网页游戏在线人数分析工具 | 数据仅供参考</p>
+        </footer>-->
+    </div>
 
     <script>
+        // 初始化日期选择器
         let flatpickrInstance = null;
-        let availableDates = [];
+        // let availableDates = [];
+        let chart = null;
+        const MANIFEST_PATH = "data/Manifest.json";
 
-        // 初始化 flatpickr
-        function initDatePicker() {
-            flatpickrInstance = flatpickr("#datePicker", {
-                locale: "zh", // 中文
-                dateFormat: "Y-m-d",
-                onChange: function(selectedDates, dateStr, instance) {
-                    
-                    if (dateStr) {
-                        loadDataForDate(dateStr);
-                    }
-                },
-                // 日期选择器的月份变化时，构建当前年月路径，访问data/2025-05/Manifest.json，获取当月可提供的日期，更新表格
-                onMonthChange: function(selectedDates, dateStr, instance) {
-                    // const curYear = instance.currentYear;
-                    // const curMonth = instance.currentMonth;
-                    // const manifestFilePath = `data/${curYear}-${curMonth.padStart(2, '0')}/Manifest.json`;
-                    // console.log(instance.currentMonth+" "+ instance.currentYear);
+        const datePicker = flatpickr("#datePicker", {
+            locale: "zh",
+            dateFormat: "Y-m-d",
+            // defaultDate: "2025-05-22",
+            onChange: function(selectedDates, dateStr, instance) {
+                // dateStr = "2025-05-22"
+                loadCsvFile(dateStr);
+            },
+            // 日期选择器的月份变化时，构建当前年月路径，访问data/2025-05/Manifest.json，获取当月可提供的日期，更新表格
+            onMonthChange: function(selectedDates, dateStr, instance) {
+                updateAvailableDates(instance.currentYear, instance.currentMonth+1);
+            },
+            onReady: function(selectedDates, dateStr, instance) {
+                // 初始时禁用所有日期
+                instance.set('enable', []);
+            }
+        });
 
-                    updateAvailableDates(instance.currentYear, instance.currentMonth+1);
-                },
-                onReady: function(selectedDates, dateStr, instance) {
-                    // 初始时禁用所有日期
-                    instance.set('enable', []);
-                }
-            });
-        }
 
         // 更新可用日期
         async function updateAvailableDates(year, month) {
             try {
-                const folderName = `${year}-${month.toString().padStart(2, '0')}`;
-                const manifestUrl = `data/${folderName}/Manifest.json`;
-                console.log(manifestUrl);
-                const response = await fetch(manifestUrl);
-                if (!response.ok) return;
-                
-                const manifest = await response.json();
-                availableDates = manifest.availableDates || [];
-                
+                const res = await fetch(MANIFEST_PATH);
+                if (!res.ok){
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
+                const manifestJson = await res.json();
+                const curMonth = `${year}-${month.toString().padStart(2, '0')}`;
+                const availableDates = manifestJson["availableDates"][curMonth];
                 // 更新日期选择器的可用日期
-                flatpickrInstance.set('enable', availableDates);
+                datePicker.set('enable', availableDates);
                 
                 // 更新提示信息
                 //updateDateInfo(year, month, availableDates);
                 
             } catch (error) {
                 console.error('获取可用日期失败:', error);
-                availableDates = [];
-                flatpickrInstance.set('enable', []);
+                datePicker.set('enable', []);
             }
         }
 
-        function updateDateInfo(year, month, dates) {
-            const infoElement = document.getElementById('dateInfo');
-            infoElement.innerHTML = `
-                <div style="color: #666; margin-top: 10px;">
-                    <strong>${year}-${month}</strong> 有 <strong style="color: #4CAF50;">${dates.length}</strong> 天可用数据
-                    ${dates.length > 0 ? `<br>可用日期: ${dates.join(', ')}` : ''}
-                </div>
-            `;
+
+        // 创建24小时的时间轴数组 (1440分钟)
+        function createTimeArray() {
+            const timeArray = [];
+            for (let hour = 0; hour < 24; hour++) {
+                for (let minute = 0; minute < 60; minute++) {
+                    timeArray.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
+                }
+            }
+            return timeArray;
         }
 
-        // 监听月份变化
-        document.getElementById('datePicker').addEventListener('focus', function() {
-            // 当用户点击选择器时，如果还没有选择月份，提示先选择年份
+        /*
+            传入已选择的日期，构建/文件夹名/日期.csv路径
+            fetch该路径，为空则alert该日期无数据
+            返回ok则处理csv数据，返回一个字典数组[{date:,count:}...]
+        */
+        async function loadCsvFile(dateStr){
+            const playerCountArr = new Array(1440).fill(null);
+            const dateSelect = dateStr.split("-");
+            const filePath = `data/${dateSelect[0]}-${dateSelect[1]}/${dateStr}.csv`;
+            try {
+                const response = await fetch(filePath);
+                if (!response.ok) throw new Error(`文件加载失败: ${response.status}`);
+                const csvText = await response.text();
+                if (!csvText.trim()) throw new Error('文件内容为空');
+
+                // 返回行数组，去除空行
+                const lines = csvText.split("\n").filter(line=>line.trim()!='');
+                for(const line of lines){
+                    const dateDetail = line.split(",");
+                    const date = new Date(dateDetail[0].trim());
+                    const dateIndex = date.getHours()*60+date.getMinutes();
+                    if(dateDetail[1] != null){
+                        playerCountArr[dateIndex] = parseInt(dateDetail[1]);
+                    }
+                }
+                updateStats(playerCountArr);
+                updateChart(playerCountArr);
+            } catch (error) {
+                alert('选择的日期没有可用数据');
+                console.error('读取CSV失败:', error);
+            }
+        }
+        
+
+
+        // 更新图表
+        function updateChart(playerCountArr) {
+            const ctx = document.getElementById('onlineChart').getContext('2d');
+            const yAxisStart = parseInt(document.getElementById('yAxisStart').value) || 0;
+            
+            if (chart) {
+                chart.destroy();
+            }
+            const dates = createTimeArray();
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: '在线人数',
+                        data: playerCountArr,
+                        borderColor: '#ff8a00',
+                        backgroundColor: 'rgba(255, 138, 0, 0.1)',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        pointHoverRadius: 5,
+                        pointHoverBackgroundColor: '#e52e71',
+                        fill: true,
+                        tension: 0.2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            suggestedMin: yAxisStart,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#ccc'
+                            },
+                            // title: {
+                            //     display: true,
+                            //     text: '在线人数',
+                            //     color: '#ccc'
+                            // }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#ccc',
+                                maxTicksLimit: 12
+                            },
+                            // title: {
+                            //     display: true,
+                            //     text: '时间',
+                            //     color: '#ccc'
+                            // }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#ccc'
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return `在线人数: ${context.parsed.y}`;
+                                },
+                                title: function(context) {
+                                    const index = context[0].dataIndex;
+                                    // const date = new Date(dateDetails[index].date);
+                                    // return date.toLocaleString();
+                                    return dates[index];
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            });
+        }
+
+        // 更新统计信息
+        function updateStats(playerCountArr) {
+            const players = playerCountArr.filter(count => count !== null && !isNaN(count));
+            const max = Math.max(...players);
+            const min = Math.min(...players);
+            const avg = Math.round(players.reduce((a, b) => a + b, 0) / players.length);
+            
+            document.getElementById("yAxisStart").value = min;
+            document.getElementById('maxValue').textContent = max;
+            document.getElementById('minValue').textContent = min;
+            document.getElementById('avgValue').textContent = avg;
+            document.getElementById('totalData').textContent = players.length;
+        }
+
+        // 初始化页面
+        document.getElementById('updateChart').addEventListener('click', function() {
+            const selectedDate = datePicker.input.value;
+            if (selectedDate) {
+                loadCsvFile(selectedDate);
+            }
         });
 
-        // 初始化
-        initDatePicker();
-
+        // 默认加载今天的数据
+        window.onload = function() {
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            datePicker.setDate(todayStr);
+            datePicker.input.value = todayStr;
+            updateAvailableDates(today.getFullYear(), today.getMonth()+1);
+        };
     </script>
 </body>
-
 </html>
