@@ -4,10 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>牛牛在线人数</title>
-    <!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/zh.js"></script>-->
 
     <link rel="stylesheet" href="css/flatpickr.min.css">
     <script src="js/chart.js"></script>
@@ -178,7 +174,6 @@
     <div class="container">
         <header>
             <h1>牛牛在线人数</h1>
-            <!--<p class="description">可视化分析游戏每分钟的在线人数数据，支持按日期选择和Y轴自定义</p>-->
         </header>
         
         <div class="controls">
@@ -203,7 +198,7 @@
         </div>
         
         <div class="data-info">
-            <h3>数据统计信息</h3>
+            <!-- <h3>数据统计信息</h3> -->
             <div class="stats">
                 <div class="stat-card">
                     <div class="stat-value" id="maxValue">0</div>
@@ -224,38 +219,28 @@
             </div>
         </div>
         
-        <!--<footer>
-            <p>© 2023 网页游戏在线人数分析工具 | 数据仅供参考</p>
-        </footer>-->
     </div>
 
     <script>
-        // 初始化日期选择器
         let flatpickrInstance = null;
-        // let availableDates = [];
         let chart = null;
         const MANIFEST_PATH = "data/Manifest.json";
 
         const datePicker = flatpickr("#datePicker", {
             locale: "zh",
             dateFormat: "Y-m-d",
-            // defaultDate: "2025-05-22",
             onChange: function(selectedDates, dateStr, instance) {
-                // dateStr = "2025-05-22"
                 loadCsvFile(dateStr);
             },
-            // 日期选择器的月份变化时，构建当前年月路径，访问data/2025-05/Manifest.json，获取当月可提供的日期，更新表格
             onMonthChange: function(selectedDates, dateStr, instance) {
                 updateAvailableDates(instance.currentYear, instance.currentMonth+1);
             },
             onReady: function(selectedDates, dateStr, instance) {
-                // 初始时禁用所有日期
                 instance.set('enable', []);
             }
         });
 
 
-        // 更新可用日期
         async function updateAvailableDates(year, month) {
             try {
                 const res = await fetch(MANIFEST_PATH);
@@ -265,11 +250,8 @@
                 const manifestJson = await res.json();
                 const curMonth = `${year}-${month.toString().padStart(2, '0')}`;
                 const availableDates = manifestJson["availableDates"][curMonth];
-                // 更新日期选择器的可用日期
                 datePicker.set('enable', availableDates);
                 
-                // 更新提示信息
-                //updateDateInfo(year, month, availableDates);
                 
             } catch (error) {
                 console.error('获取可用日期失败:', error);
@@ -277,63 +259,61 @@
             }
         }
 
-        /*
-            传入已选择的日期，构建/文件夹名/日期.csv路径
-            fetch该路径，为空则alert该日期无数据
-            返回ok则处理csv数据，返回一个字典数组[{date:,count:}...]
-        */
-        async function loadCsvFile(dateStr){
 
+        function createTimeArray() {
+            const timeArray = [];
+            for (let hour = 0; hour < 24; hour++) {
+                for (let minute = 0; minute < 60; minute++) {
+                    timeArray.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
+                }
+            }
+            return timeArray;
+        }
+
+        async function loadCsvFile(dateStr){
+            const playerCountArr = new Array(1440).fill(null);
             const dateSelect = dateStr.split("-");
             const filePath = `data/${dateSelect[0]}-${dateSelect[1]}/${dateStr}.csv`;
             try {
                 const response = await fetch(filePath);
                 if (!response.ok) throw new Error(`文件加载失败: ${response.status}`);
-                
                 const csvText = await response.text();
                 if (!csvText.trim()) throw new Error('文件内容为空');
 
-                // 返回行数组，去除空行
                 const lines = csvText.split("\n").filter(line=>line.trim()!='');
-                const result = [];
-                for (const line of lines) {
+                for(const line of lines){
                     const dateDetail = line.split(",");
-                    result.push({
-                        date:dateDetail[0].trim(),
-                        playerCount:parseInt(dateDetail[1].trim(), 10)
-                    });
+                    const date = new Date(dateDetail[0].trim());
+                    const dateIndex = date.getHours()*60+date.getMinutes();
+                    if(dateDetail[1] != null){
+                        playerCountArr[dateIndex] = parseInt(dateDetail[1]);
+                    }
                 }
-                updateStats(result);
-                updateChart(result);
+                updateStats(playerCountArr);
+                updateChart(playerCountArr);
             } catch (error) {
                 alert('选择的日期没有可用数据');
                 console.error('读取CSV失败:', error);
             }
         }
+        
 
 
-        // 更新图表
-        function updateChart(dateDetails) {
+        function updateChart(playerCountArr) {
             const ctx = document.getElementById('onlineChart').getContext('2d');
             const yAxisStart = parseInt(document.getElementById('yAxisStart').value) || 0;
             
             if (chart) {
                 chart.destroy();
             }
-            const dates = dateDetails.map(dateDetail =>{
-                const date = new Date(dateDetail.date);
-                return date.toTimeString().substring(0, 5);
-            });
-            const playerCounts = dateDetails.map(dateDetail =>dateDetail.playerCount);
-            const players = dateDetails.map(item => item.players);
-            
+            const dates = createTimeArray();
             chart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: dates,
                     datasets: [{
                         label: '在线人数',
-                        data: playerCounts,
+                        data: playerCountArr,
                         borderColor: '#ff8a00',
                         backgroundColor: 'rgba(255, 138, 0, 0.1)',
                         borderWidth: 2,
@@ -357,11 +337,6 @@
                             ticks: {
                                 color: '#ccc'
                             },
-                            // title: {
-                            //     display: true,
-                            //     text: '在线人数',
-                            //     color: '#ccc'
-                            // }
                         },
                         x: {
                             grid: {
@@ -371,11 +346,6 @@
                                 color: '#ccc',
                                 maxTicksLimit: 12
                             },
-                            // title: {
-                            //     display: true,
-                            //     text: '时间',
-                            //     color: '#ccc'
-                            // }
                         }
                     },
                     plugins: {
@@ -393,8 +363,7 @@
                                 },
                                 title: function(context) {
                                     const index = context[0].dataIndex;
-                                    const date = new Date(dateDetails[index].date);
-                                    return date.toLocaleString();
+                                    return dates[index];
                                 }
                             }
                         }
@@ -407,11 +376,8 @@
             });
         }
 
-        // 更新统计信息
-        function updateStats(dateDetails) {
-            const players = dateDetails.map(dateDetail => dateDetail.playerCount).filter(count => count !== null && count !== 0);
-            console.log(players);
-                          
+        function updateStats(playerCountArr) {
+            const players = playerCountArr.filter(count => count !== null && !isNaN(count));
             const max = Math.max(...players);
             const min = Math.min(...players);
             const avg = Math.round(players.reduce((a, b) => a + b, 0) / players.length);
@@ -423,7 +389,6 @@
             document.getElementById('totalData').textContent = players.length;
         }
 
-        // 初始化页面
         document.getElementById('updateChart').addEventListener('click', function() {
             const selectedDate = datePicker.input.value;
             if (selectedDate) {
@@ -431,7 +396,6 @@
             }
         });
 
-        // 默认加载今天的数据
         window.onload = function() {
             const today = new Date();
             const todayStr = today.toISOString().split('T')[0];
