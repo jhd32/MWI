@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>牛牛在线人数</title>
-
     <link rel="stylesheet" href="css/flatpickr.min.css">
     <script src="js/chart.js"></script>
     <script src="js/flatpickr.js"></script>
@@ -71,6 +70,20 @@
             min-width: 250px;
         }
         
+        .button-group {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            align-items: stretch;
+            height: 48px;
+        }
+        
+        .button-group button {
+            flex: 1;
+            padding: 12px 15px;
+            height: 100%;
+        }
+        
         label {
             display: block;
             margin-bottom: 8px;
@@ -84,6 +97,8 @@
             border-radius: 5px;
             width: 100%;
             font-size: 1rem;
+            height: 48px;
+            box-sizing: border-box;
         }
         
         input[type="number"] {
@@ -152,11 +167,79 @@
             margin-top: 5px;
         }
         
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        
+        .legend-date {
+            color: #ccc;
+            font-size: 0.9rem;
+        }
+        
+        .remove-btn {
+            background: rgba(255, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 0;
+        }
+        
         footer {
             text-align: center;
             margin-top: 30px;
             color: #ccc;
             font-size: 0.9rem;
+        }
+        
+        .progress-container {
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff8a00, #e52e71);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .progress-text {
+            font-size: 0.8rem;
+            color: #ccc;
+            margin-top: 5px;
+            text-align: center;
         }
         
         @media (max-width: 768px) {
@@ -173,23 +256,33 @@
 <body>
     <div class="container">
         <header>
-            <h1>牛牛在线人数</h1>
+            <h1 id="pageTitle">牛牛在线人数</h1>
         </header>
         
         <div class="controls">
             <div class="control-group">
-                <label for="datePicker">选择日期：</label>
+                <label for="datePicker" id="datePickerLabel">选择日期：</label>
                 <input type="text" id="datePicker" placeholder="选择要查看的日期">
             </div>
             
             <div class="control-group">
-                <label for="yAxisStart">Y轴起始值：</label>
+                <label for="yAxisStart" id="yAxisStartLabel">Y轴起始值：</label>
                 <input type="number" id="yAxisStart" placeholder="输入Y轴起始值" value="0">
             </div>
             
             <div class="control-group">
-                <label>&nbsp;</label>
-                <button id="updateChart">更新图表</button>
+                <label id="actionsLabel">操作：</label>
+                <div class="button-group">
+                    <button id="updateChart">更新图表</button>
+                    <button id="addDate">加入日期</button>
+                    <button id="addAllDates">所有日期</button>
+                </div>
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">正在加载数据...</div>
+                </div>
             </div>
         </div>
         
@@ -197,40 +290,131 @@
             <canvas id="onlineChart"></canvas>
         </div>
         
+        <div class="legend" id="chartLegend">
+        </div>
+        
         <div class="data-info">
-            <h3>数据统计信息</h3>
+            <h3 id="dataStatsTitle">数据统计信息</h3>
             <div class="stats">
                 <div class="stat-card">
                     <div class="stat-value" id="maxValue">0</div>
-                    <div class="stat-label">最高在线人数</div>
+                    <div class="stat-label" id="maxLabel">最高在线人数</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-value" id="minValue">0</div>
-                    <div class="stat-label">最低在线人数</div>
+                    <div class="stat-label" id="minLabel">最低在线人数</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-value" id="avgValue">0</div>
-                    <div class="stat-label">平均在线人数</div>
+                    <div class="stat-label" id="avgLabel">平均在线人数</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-value" id="totalData">0</div>
-                    <div class="stat-label">数据点数量</div>
+                    <div class="stat-label" id="totalDataLabel">数据点数量</div>
                 </div>
             </div>
         </div>
-        
     </div>
 
     <script>
+        const translations = {
+            'zh-CN': {
+                pageTitle: '牛牛在线人数',
+                datePickerLabel: '选择日期：',
+                datePickerPlaceholder: '选择要查看的日期',
+                yAxisStartLabel: 'Y轴起始值：',
+                yAxisStartPlaceholder: '输入Y轴起始值',
+                actionsLabel: '操作：',
+                addDateButton: '加入日期',
+                updateChartButton: '更新图表',
+                addAllDatesButton: '所有日期',
+                dataStatsTitle: '数据统计信息',
+                maxLabel: '最高在线人数',
+                minLabel: '最低在线人数',
+                avgLabel: '平均在线人数',
+                totalDataLabel: '数据点数量',
+                alertNoDateSelected: '请先选择日期',
+                alertDateAlreadyAdded: '该日期已添加到图表中',
+                alertNoDataAvailable: '选择的日期没有可用数据',
+                removeButtonTitle: '移除此日期',
+                loadingProgress: '正在加载数据...',
+                loadingComplete: '加载完成!',
+                noDatesInMonth: '当前月份没有可用数据'
+            },
+            'en': {
+                pageTitle: 'NiuNiu Online Players',
+                datePickerLabel: 'Select Date:',
+                datePickerPlaceholder: 'Select date to view',
+                yAxisStartLabel: 'Y-Axis Start Value:',
+                yAxisStartPlaceholder: 'Enter Y-axis start value',
+                actionsLabel: 'Actions:',
+                addDateButton: 'Add Date',
+                updateChartButton: 'Update Chart',
+                addAllDatesButton: 'Add All Dates',
+                dataStatsTitle: 'Data Statistics',
+                maxLabel: 'Max Online Players',
+                minLabel: 'Min Online Players',
+                avgLabel: 'Average Online Players',
+                totalDataLabel: 'Data Points Count',
+                alertNoDateSelected: 'Please select a date first',
+                alertDateAlreadyAdded: 'This date has already been added to the chart',
+                alertNoDataAvailable: 'No data available for the selected date',
+                removeButtonTitle: 'Remove this date',
+                loadingProgress: 'Loading data...',
+                loadingComplete: 'Loading complete!',
+                noDatesInMonth: 'No available data for current month'
+            }
+        };
+
+        function detectLanguage() {
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('zh')) {
+                return 'zh-CN';
+            } else {
+                return 'en';
+            }
+        }
+
+        function setLanguage(lang) {
+            const t = translations[lang];
+            
+            document.getElementById('pageTitle').textContent = t.pageTitle;
+            document.getElementById('datePickerLabel').textContent = t.datePickerLabel;
+            document.getElementById('datePicker').placeholder = t.datePickerPlaceholder;
+            document.getElementById('yAxisStartLabel').textContent = t.yAxisStartLabel;
+            document.getElementById('yAxisStart').placeholder = t.yAxisStartPlaceholder;
+            document.getElementById('actionsLabel').textContent = t.actionsLabel;
+            document.getElementById('addDate').textContent = t.addDateButton;
+            document.getElementById('updateChart').textContent = t.updateChartButton;
+            document.getElementById('addAllDates').textContent = t.addAllDatesButton;
+            document.getElementById('dataStatsTitle').textContent = t.dataStatsTitle;
+            document.getElementById('maxLabel').textContent = t.maxLabel;
+            document.getElementById('minLabel').textContent = t.minLabel;
+            document.getElementById('avgLabel').textContent = t.avgLabel;
+            document.getElementById('totalDataLabel').textContent = t.totalDataLabel;
+            
+            return t;
+        }
+
         let flatpickrInstance = null;
         let chart = null;
         const MANIFEST_PATH = "data/Manifest.json";
+        
+        let loadedDates = [];
+        
+        const colorPalette = [
+            '#ff8a00', '#e52e71', '#4CAF50', '#2196F3', '#9C27B0', 
+            '#FFC107', '#009688', '#673AB7', '#FF5722', '#607D8B',
+            '#00BCD4', '#8BC34A', '#FF9800', '#795548', '#9E9E9E'
+        ];
+
+        const currentLang = detectLanguage();
+        const currentTranslations = setLanguage(currentLang);
 
         const datePicker = flatpickr("#datePicker", {
-            locale: "zh",
+            locale: currentLang === 'zh-CN' ? "zh" : "default",
             dateFormat: "Y-m-d",
             onChange: function(selectedDates, dateStr, instance) {
-                loadCsvFile(dateStr);
             },
             onMonthChange: function(selectedDates, dateStr, instance) {
                 updateAvailableDates(instance.currentYear, instance.currentMonth+1);
@@ -239,7 +423,6 @@
                 instance.set('enable', []);
             }
         });
-
 
         async function updateAvailableDates(year, month) {
             try {
@@ -250,15 +433,17 @@
                 const manifestJson = await res.json();
                 const curMonth = `${year}-${month.toString().padStart(2, '0')}`;
                 const availableDates = manifestJson["availableDates"][curMonth];
-                datePicker.set('enable', availableDates);
                 
+                const loadedDateStrings = loadedDates.map(item => item.date);
+                const filteredDates = availableDates ? availableDates.filter(date => !loadedDateStrings.includes(date)) : [];
+                
+                datePicker.set('enable', filteredDates);
                 
             } catch (error) {
                 console.error('获取可用日期失败:', error);
                 datePicker.set('enable', []);
             }
         }
-
 
         function createTimeArray() {
             const timeArray = [];
@@ -289,40 +474,84 @@
                         playerCountArr[dateIndex] = parseInt(dateDetail[1]);
                     }
                 }
-                updateStats(playerCountArr);
-                updateChart(playerCountArr);
+                
+                return playerCountArr;
             } catch (error) {
-                alert('选择的日期没有可用数据');
-                console.error('读取CSV失败:', error);
+                console.error(`读取CSV失败: ${dateStr}`, error);
+                return null;
             }
         }
         
-
-
-        function updateChart(playerCountArr) {
+        function getNextColor() {
+            return colorPalette[loadedDates.length % colorPalette.length];
+        }
+        
+        function updateLegend() {
+            const legendContainer = document.getElementById('chartLegend');
+            legendContainer.innerHTML = '';
+            
+            loadedDates.forEach((item, index) => {
+                const legendItem = document.createElement('div');
+                legendItem.className = 'legend-item';
+                
+                const colorBox = document.createElement('div');
+                colorBox.className = 'legend-color';
+                colorBox.style.backgroundColor = item.color;
+                
+                const dateText = document.createElement('span');
+                dateText.className = 'legend-date';
+                dateText.textContent = item.date;
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-btn';
+                removeBtn.innerHTML = '×';
+                removeBtn.title = currentTranslations.removeButtonTitle;
+                removeBtn.onclick = function() {
+                    removeDate(index);
+                };
+                
+                legendItem.appendChild(colorBox);
+                legendItem.appendChild(dateText);
+                legendItem.appendChild(removeBtn);
+                legendContainer.appendChild(legendItem);
+            });
+        }
+        
+        function removeDate(index) {
+            loadedDates.splice(index, 1);
+            updateChart();
+            updateAvailableDates(datePicker.currentYear, datePicker.currentMonth+1);
+        }
+        
+        function updateChart() {
             const ctx = document.getElementById('onlineChart').getContext('2d');
             const yAxisStart = parseInt(document.getElementById('yAxisStart').value) || 0;
             
             if (chart) {
                 chart.destroy();
             }
+            
             const dates = createTimeArray();
+            
+            const datasets = loadedDates.map(item => {
+                return {
+                    label: item.date,
+                    data: item.data,
+                    borderColor: item.color,
+                    backgroundColor: item.color + '20',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    pointHoverBackgroundColor: item.color,
+                    tension: 0.2
+                };
+            });
+            
             chart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: dates,
-                    datasets: [{
-                        label: '在线人数',
-                        data: playerCountArr,
-                        borderColor: '#ff8a00',
-                        backgroundColor: 'rgba(255, 138, 0, 0.1)',
-                        borderWidth: 2,
-                        pointRadius: 0,
-                        pointHoverRadius: 5,
-                        pointHoverBackgroundColor: '#e52e71',
-                        fill: true,
-                        tension: 0.2
-                    }]
+                    datasets: datasets
                 },
                 options: {
                     responsive: true,
@@ -336,7 +565,7 @@
                             },
                             ticks: {
                                 color: '#ccc'
-                            },
+                            }
                         },
                         x: {
                             grid: {
@@ -345,21 +574,19 @@
                             ticks: {
                                 color: '#ccc',
                                 maxTicksLimit: 12
-                            },
+                            }
                         }
                     },
                     plugins: {
                         legend: {
-                            labels: {
-                                color: '#ccc'
-                            }
+                            display: false
                         },
                         tooltip: {
-                            mode: 'index',
+                            mode: 'nearest',
                             intersect: false,
                             callbacks: {
                                 label: function(context) {
-                                    return `在线人数: ${context.parsed.y}`;
+                                    return `${context.dataset.label}: ${context.parsed.y}`;
                                 },
                                 title: function(context) {
                                     const index = context[0].dataIndex;
@@ -369,11 +596,26 @@
                         }
                     },
                     interaction: {
-                        mode: 'index',
+                        mode: 'nearest',
                         intersect: false
                     }
                 }
             });
+            
+            if (loadedDates.length > 0) {
+                updateStats(loadedDates[0].data);
+            } else {
+                resetStats();
+            }
+            
+            updateLegend();
+        }
+        
+        function resetStats() {
+            document.getElementById('maxValue').textContent = '0';
+            document.getElementById('minValue').textContent = '0';
+            document.getElementById('avgValue').textContent = '0';
+            document.getElementById('totalData').textContent = '0';
         }
 
         function updateStats(playerCountArr) {
@@ -382,21 +624,130 @@
             const min = Math.min(...players);
             const avg = Math.round(players.reduce((a, b) => a + b, 0) / players.length);
             
-            document.getElementById("yAxisStart").value = min;
             document.getElementById('maxValue').textContent = max;
             document.getElementById('minValue').textContent = min;
             document.getElementById('avgValue').textContent = avg;
             document.getElementById('totalData').textContent = players.length;
         }
 
-        document.getElementById('updateChart').addEventListener('click', function() {
-            const selectedDate = datePicker.input.value;
-            if (selectedDate) {
-                loadCsvFile(selectedDate);
+        async function getCurrentMonthDates() {
+            try {
+                const res = await fetch(MANIFEST_PATH);
+                if (!res.ok){
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
+                const manifestJson = await res.json();
+                const selectedDate = datePicker.input.value;
+                if(!selectedDate){
+                    alert(currentTranslations.alertNoDateSelected);
+                    return [];
+                }
+                const currentMonth = selectedDate.substring(0, 7);
+                return manifestJson["availableDates"][currentMonth] || [];
+            } catch (error) {
+                console.error('获取当前月份日期失败:', error);
+                return [];
             }
-        });
+        }
 
-        window.onload = function() {
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('addDate').addEventListener('click', async function() {
+                const selectedDate = datePicker.input.value;
+                if (selectedDate) {
+                    if (loadedDates.some(item => item.date === selectedDate)) {
+                        alert(currentTranslations.alertDateAlreadyAdded);
+                        return;
+                    }
+                    
+                    const data = await loadCsvFile(selectedDate);
+                    if (data) {
+                        loadedDates.push({
+                            date: selectedDate,
+                            data: data,
+                            color: getNextColor()
+                        });
+                        updateChart();
+                        updateAvailableDates(datePicker.currentYear, datePicker.currentMonth+1);
+                    } else {
+                        alert(currentTranslations.alertNoDataAvailable);
+                    }
+                } else {
+                    alert(currentTranslations.alertNoDateSelected);
+                }
+            });
+            
+            document.getElementById('updateChart').addEventListener('click', async function() {
+                const selectedDate = datePicker.input.value;
+                if (selectedDate) {
+                    const data = await loadCsvFile(selectedDate);
+                    if (data) {
+                        const players = data.filter(count => count !== null && !isNaN(count));
+                        const min = players.length > 0 ? Math.min(...players) : 0;
+                        
+                        document.getElementById('yAxisStart').value = min;
+                        
+                        loadedDates = [{
+                            date: selectedDate,
+                            data: data,
+                            color: colorPalette[0]
+                        }];
+                        updateChart();
+                        updateAvailableDates(datePicker.currentYear, datePicker.currentMonth+1);
+                    } else {
+                        alert(currentTranslations.alertNoDataAvailable);
+                    }
+                } else {
+                    alert(currentTranslations.alertNoDateSelected);
+                }
+            });
+            
+            document.getElementById('addAllDates').addEventListener('click', async function() {
+                const currentMonthDates = await getCurrentMonthDates();
+                if (currentMonthDates.length === 0) {
+                    alert(currentTranslations.noDatesInMonth);
+                    return;
+                }
+                
+                const loadedDateStrings = loadedDates.map(item => item.date);
+                const datesToAdd = currentMonthDates.filter(date => !loadedDateStrings.includes(date));
+                
+                if (datesToAdd.length === 0) {
+                    alert(currentTranslations.alertDateAlreadyAdded);
+                    return;
+                }
+                
+                const progressContainer = document.getElementById('progressContainer');
+                const progressFill = document.getElementById('progressFill');
+                const progressText = document.getElementById('progressText');
+                progressContainer.style.display = 'block';
+                
+                for (let i = 0; i < datesToAdd.length; i++) {
+                    const date = datesToAdd[i];
+                    progressText.textContent = `${currentTranslations.loadingProgress} (${i+1}/${datesToAdd.length})`;
+                    progressFill.style.width = `${((i+1) / datesToAdd.length) * 100}%`;
+                    
+                    const data = await loadCsvFile(date);
+                    if (data) {
+                        loadedDates.push({
+                            date: date,
+                            data: data,
+                            color: getNextColor()
+                        });
+                    }
+                    
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                }
+                
+                updateChart();
+                
+                progressText.textContent = currentTranslations.loadingComplete;
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                }, 1000);
+                
+                updateAvailableDates(datePicker.currentYear, datePicker.currentMonth+1);
+            });
+            
             const today = new Date();
             const todayStr = today.toISOString().split('T')[0];
             
@@ -404,14 +755,14 @@
                 try {
                     datePicker.setDate(todayStr, false);
                     
-                    loadCsvFile(todayStr);
+                    document.getElementById('updateChart').click();
                 } catch (error) {
                     console.error('设置日期失败:', error);
                 }
             }, 300);
             
             updateAvailableDates(today.getFullYear(), today.getMonth()+1);
-        };
+        });
     </script>
 </body>
 </html>
