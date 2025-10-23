@@ -367,7 +367,7 @@
         };
 
         function detectLanguage() {
-            const browserLang = navigator.language || navigator.userLanguage;
+            const browserLang = navigator.language || navigator.userLanguage ||'en-US';
             if (browserLang.startsWith('zh')) {
                 return 'zh-CN';
             } else {
@@ -589,9 +589,9 @@
                             callbacks: {
                                 label: function(context) {
                                     const tmpDate = new Date(context.dataset.label);
-                                    const dayOfWeek = tmpDate.getDay();
-                                    const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-                                    const weekdayName = weekdays[dayOfWeek];
+                                    const weekdayName = tmpDate.toLocaleDateString(currentLang, { 
+                                        weekday: 'long' 
+                                    });
                                     return `${context.dataset.label} ${weekdayName}: ${context.parsed.y}`;
                                 },
                                 title: function(context) {
