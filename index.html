@@ -74,14 +74,14 @@
             display: flex;
             flex-direction: row;
             gap: 10px;
-            align-items: stretch; /* 确保按钮高度一致 */
-            height: 48px; /* 与输入框高度保持一致 */
+            align-items: stretch;
+            height: 48px;
         }
         
         .button-group button {
             flex: 1;
-            padding: 12px 15px; /* 与输入框的padding保持一致 */
-            height: 100%; /* 确保按钮填满容器高度 */
+            padding: 12px 15px;
+            height: 100%;
         }
         
         label {
@@ -91,15 +91,14 @@
             color: #ff8a00;
         }
         
-        /* 确保输入框和按钮的高度一致 */
         input, button {
             padding: 12px 15px;
             border: none;
             border-radius: 5px;
             width: 100%;
             font-size: 1rem;
-            height: 48px; /* 添加固定高度 */
-            box-sizing: border-box; /* 确保padding包含在高度内 */
+            height: 48px;
+            box-sizing: border-box;
         }
         
         input[type="number"] {
@@ -292,7 +291,6 @@
         </div>
         
         <div class="legend" id="chartLegend">
-            <!-- 图例将在这里动态生成 -->
         </div>
         
         <div class="data-info">
@@ -319,7 +317,6 @@
     </div>
 
     <script>
-        // 多语言支持
         const translations = {
             'zh-CN': {
                 pageTitle: '牛牛在线人数',
@@ -345,7 +342,7 @@
                 noDatesInMonth: '当前月份没有可用数据'
             },
             'en': {
-                pageTitle: 'NiuNiu Online Players',
+                pageTitle: 'MWI Online Players',
                 datePickerLabel: 'Select Date:',
                 datePickerPlaceholder: 'Select date to view',
                 yAxisStartLabel: 'Y-Axis Start Value:',
@@ -369,10 +366,8 @@
             }
         };
 
-        // 检测浏览器语言
         function detectLanguage() {
-            const browserLang = navigator.language || navigator.userLanguage;
-            // 检查是否为中文地区（简体或繁体）
+            const browserLang = navigator.language || navigator.userLanguage ||'en-US';
             if (browserLang.startsWith('zh')) {
                 return 'zh-CN';
             } else {
@@ -380,11 +375,9 @@
             }
         }
 
-        // 设置页面语言
         function setLanguage(lang) {
             const t = translations[lang];
             
-            // 更新页面元素文本
             document.getElementById('pageTitle').textContent = t.pageTitle;
             document.getElementById('datePickerLabel').textContent = t.datePickerLabel;
             document.getElementById('datePicker').placeholder = t.datePickerPlaceholder;
@@ -403,22 +396,18 @@
             return t;
         }
 
-        // 初始化日期选择器
         let flatpickrInstance = null;
         let chart = null;
         const MANIFEST_PATH = "data/Manifest.json";
         
-        // 存储已加载的日期数据
         let loadedDates = [];
         
-        // 预定义颜色数组
         const colorPalette = [
             '#ff8a00', '#e52e71', '#4CAF50', '#2196F3', '#9C27B0', 
             '#FFC107', '#009688', '#673AB7', '#FF5722', '#607D8B',
             '#00BCD4', '#8BC34A', '#FF9800', '#795548', '#9E9E9E'
         ];
 
-        // 当前语言和翻译对象
         const currentLang = detectLanguage();
         const currentTranslations = setLanguage(currentLang);
 
@@ -426,18 +415,15 @@
             locale: currentLang === 'zh-CN' ? "zh" : "default",
             dateFormat: "Y-m-d",
             onChange: function(selectedDates, dateStr, instance) {
-                // 这里不再自动加载数据，等待用户点击按钮
             },
             onMonthChange: function(selectedDates, dateStr, instance) {
                 updateAvailableDates(instance.currentYear, instance.currentMonth+1);
             },
             onReady: function(selectedDates, dateStr, instance) {
-                // 初始时禁用所有日期
                 instance.set('enable', []);
             }
         });
 
-        // 更新可用日期
         async function updateAvailableDates(year, month) {
             try {
                 const res = await fetch(MANIFEST_PATH);
@@ -448,11 +434,9 @@
                 const curMonth = `${year}-${month.toString().padStart(2, '0')}`;
                 const availableDates = manifestJson["availableDates"][curMonth];
                 
-                // 过滤掉已加载的日期
                 const loadedDateStrings = loadedDates.map(item => item.date);
                 const filteredDates = availableDates ? availableDates.filter(date => !loadedDateStrings.includes(date)) : [];
                 
-                // 更新日期选择器的可用日期
                 datePicker.set('enable', filteredDates);
                 
             } catch (error) {
@@ -461,7 +445,6 @@
             }
         }
 
-        // 创建24小时的时间轴数组 (1440分钟)
         function createTimeArray() {
             const timeArray = [];
             for (let hour = 0; hour < 24; hour++) {
@@ -472,7 +455,6 @@
             return timeArray;
         }
 
-        // 加载CSV文件数据
         async function loadCsvFile(dateStr){
             const playerCountArr = new Array(1440).fill(null);
             const dateSelect = dateStr.split("-");
@@ -483,7 +465,6 @@
                 const csvText = await response.text();
                 if (!csvText.trim()) throw new Error('文件内容为空');
 
-                // 返回行数组，去除空行
                 const lines = csvText.split("\n").filter(line=>line.trim()!='');
                 for(const line of lines){
                     const dateDetail = line.split(",");
@@ -501,12 +482,10 @@
             }
         }
         
-        // 获取下一个可用颜色
         function getNextColor() {
             return colorPalette[loadedDates.length % colorPalette.length];
         }
         
-        // 更新图例
         function updateLegend() {
             const legendContainer = document.getElementById('chartLegend');
             legendContainer.innerHTML = '';
@@ -538,15 +517,12 @@
             });
         }
         
-        // 移除日期
         function removeDate(index) {
             loadedDates.splice(index, 1);
             updateChart();
-            // 更新日期选择器的可用日期
             updateAvailableDates(datePicker.currentYear, datePicker.currentMonth+1);
         }
         
-        // 更新图表
         function updateChart() {
             const ctx = document.getElementById('onlineChart').getContext('2d');
             const yAxisStart = parseInt(document.getElementById('yAxisStart').value) || 0;
@@ -558,18 +534,17 @@
             let isFill = loadedDates.length > 1 ? false : true;
             const dates = createTimeArray();
             
-            // 创建数据集
             const datasets = loadedDates.map(item => {
                 return {
                     label: item.date,
                     data: item.data,
                     borderColor: item.color,
-                    backgroundColor: item.color + '20', // 添加透明度
+                    backgroundColor: item.color + '20',
                     borderWidth: 2,
                     pointRadius: 0,
                     pointHoverRadius: 5,
                     pointHoverBackgroundColor: item.color,
-                    fill: isFill, // 保留填充区域
+                    fill: isFill,
                     tension: 0.2
                 };
             });
@@ -606,14 +581,18 @@
                     },
                     plugins: {
                         legend: {
-                            display: false // 我们使用自定义图例
+                            display: false
                         },
                         tooltip: {
-                            mode: 'nearest', // 只显示最近的数据点
+                            mode: 'nearest',
                             intersect: false,
                             callbacks: {
                                 label: function(context) {
-                                    return `${context.dataset.label}: ${context.parsed.y}`;
+                                    const tmpDate = new Date(context.dataset.label);
+                                    const weekdayName = tmpDate.toLocaleDateString(currentLang, { 
+                                        weekday: 'long' 
+                                    });
+                                    return `${context.dataset.label} ${weekdayName}: ${context.parsed.y}`;
                                 },
                                 title: function(context) {
                                     const index = context[0].dataIndex;
@@ -623,24 +602,21 @@
                         }
                     },
                     interaction: {
-                        mode: 'nearest', // 只与最近的数据点交互
+                        mode: 'nearest',
                         intersect: false
                     }
                 }
             });
             
-            // 更新统计信息（使用第一个数据集）
             if (loadedDates.length > 0) {
                 updateStats(loadedDates[0].data);
             } else {
                 resetStats();
             }
             
-            // 更新图例
             updateLegend();
         }
         
-        // 重置统计信息
         function resetStats() {
             document.getElementById('maxValue').textContent = '0';
             document.getElementById('minValue').textContent = '0';
@@ -648,7 +624,6 @@
             document.getElementById('totalData').textContent = '0';
         }
 
-        // 更新统计信息
         function updateStats(playerCountArr) {
             const players = playerCountArr.filter(count => count !== null && !isNaN(count));
             const max = Math.max(...players);
@@ -661,7 +636,6 @@
             document.getElementById('totalData').textContent = players.length;
         }
 
-        // 获取当前月份的所有可用日期
         async function getCurrentMonthDates() {
             try {
                 const res = await fetch(MANIFEST_PATH);
@@ -674,8 +648,6 @@
                     alert(currentTranslations.alertNoDateSelected);
                     return [];
                 }
-                // const today = new Date();
-                // const currentMonth = `${today.getFullYear()}-${(today.getMonth()+1).toString().padStart(2, '0')}`;
                 const currentMonth = selectedDate.substring(0, 7);
                 return manifestJson["availableDates"][currentMonth] || [];
             } catch (error) {
@@ -684,13 +656,10 @@
             }
         }
 
-        // 初始化页面
         document.addEventListener('DOMContentLoaded', function() {
-            // 加入日期按钮 - 添加新日期到图表
             document.getElementById('addDate').addEventListener('click', async function() {
                 const selectedDate = datePicker.input.value;
                 if (selectedDate) {
-                    // 检查是否已加载该日期
                     if (loadedDates.some(item => item.date === selectedDate)) {
                         alert(currentTranslations.alertDateAlreadyAdded);
                         return;
@@ -698,14 +667,12 @@
                     
                     const data = await loadCsvFile(selectedDate);
                     if (data) {
-                        // 添加新日期
                         loadedDates.push({
                             date: selectedDate,
                             data: data,
                             color: getNextColor()
                         });
                         updateChart();
-                        // 更新日期选择器的可用日期
                         updateAvailableDates(datePicker.currentYear, datePicker.currentMonth+1);
                     } else {
                         alert(currentTranslations.alertNoDataAvailable);
@@ -715,27 +682,22 @@
                 }
             });
             
-            // 更新图表按钮 - 重置图表
             document.getElementById('updateChart').addEventListener('click', async function() {
                 const selectedDate = datePicker.input.value;
                 if (selectedDate) {
                     const data = await loadCsvFile(selectedDate);
                     if (data) {
-                        // 计算数据的最小值
                         const players = data.filter(count => count !== null && !isNaN(count));
                         const min = players.length > 0 ? Math.min(...players) : 0;
                         
-                        // 将最小值设置到Y轴起始值输入框
                         document.getElementById('yAxisStart').value = min;
                         
-                        // 清空已加载的日期，添加新日期
                         loadedDates = [{
                             date: selectedDate,
                             data: data,
                             color: colorPalette[0]
                         }];
                         updateChart();
-                        // 更新日期选择器的可用日期
                         updateAvailableDates(datePicker.currentYear, datePicker.currentMonth+1);
                     } else {
                         alert(currentTranslations.alertNoDataAvailable);
@@ -745,7 +707,6 @@
                 }
             });
             
-            // 加入当月所有日期按钮
             document.getElementById('addAllDates').addEventListener('click', async function() {
                 const currentMonthDates = await getCurrentMonthDates();
                 if (currentMonthDates.length === 0) {
@@ -753,7 +714,6 @@
                     return;
                 }
                 
-                // 过滤掉已加载的日期
                 const loadedDateStrings = loadedDates.map(item => item.date);
                 const datesToAdd = currentMonthDates.filter(date => !loadedDateStrings.includes(date));
                 
@@ -762,13 +722,11 @@
                     return;
                 }
                 
-                // 显示进度条
                 const progressContainer = document.getElementById('progressContainer');
                 const progressFill = document.getElementById('progressFill');
                 const progressText = document.getElementById('progressText');
                 progressContainer.style.display = 'block';
                 
-                // 逐个加载日期数据
                 for (let i = 0; i < datesToAdd.length; i++) {
                     const date = datesToAdd[i];
                     progressText.textContent = `${currentTranslations.loadingProgress} (${i+1}/${datesToAdd.length})`;
@@ -783,24 +741,19 @@
                         });
                     }
                     
-                    // 短暂延迟，让UI有机会更新
                     await new Promise(resolve => setTimeout(resolve, 50));
                 }
                 
-                // 更新图表
                 updateChart();
                 
-                // 更新进度条显示完成
                 progressText.textContent = currentTranslations.loadingComplete;
                 setTimeout(() => {
                     progressContainer.style.display = 'none';
                 }, 1000);
                 
-                // 更新日期选择器的可用日期
                 updateAvailableDates(datePicker.currentYear, datePicker.currentMonth+1);
             });
             
-            // 默认加载今天的数据
             const today = new Date();
             const todayStr = today.toISOString().split('T')[0];
             
@@ -808,7 +761,6 @@
                 try {
                     datePicker.setDate(todayStr, false);
                     
-                    // 默认加载今天的数据
                     document.getElementById('updateChart').click();
                 } catch (error) {
                     console.error('设置日期失败:', error);
